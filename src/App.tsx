@@ -57,13 +57,16 @@ function App() {
     fetchPassage();
   }, []);
 
-  const handleSaveHighlight = async (highlight: Omit<Highlight, 'id' | 'created_at'>) => {
+  const handleSaveHighlight = async (color: string, selectedText: string) => {
+    if (!data) return; 
+
     const { data: newHighlight, error } = await supabase
       .from('highlights')
       .insert({
-        day_key: highlight.day_key,
-        color_tag: highlight.color_tag,
-        selected_text: highlight.selected_text
+        day_key: data.dayKey,
+        color_tag: color,
+        selected_text: selectedText,
+        note: ""
       })
       .select()
       .single();
@@ -71,7 +74,6 @@ function App() {
     if (error) {
       console.error("Error saving highlight:", error);
     } else if (newHighlight) {
-      // Add the new highlight (with its new ID) to our local state
       setHighlights(currentHighlights => [...currentHighlights, newHighlight]);
     }
   };
