@@ -4,6 +4,8 @@
   --green-highlight: #ddefdd;
   --blue-highlight: #ddeffc;
   --very-light-gray: #f9f9f9;
+  --maroon: #8b1b1b;
+  --deep-maroon: #671414;
 }
 
 
@@ -67,12 +69,12 @@ textarea {
 
 textarea:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--maroon);
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
 button {
-  background-color: #007bff;
+  background-color: var(--maroon);
   color: white;
   padding: 10px 15px;
   border: none;
@@ -83,7 +85,7 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: var(--deep-maroon);
 }
 
 /* Simple reflection list */
