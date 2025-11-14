@@ -46,7 +46,9 @@ function Reflection({ readingId }: ReflectionProps) {
       setStatus('Ready');
     }
 
-    loadReflections();
+    if (readingId) {
+      loadReflections();
+    }
   }, [readingId]); // Re-run if the readingId changes
 
   // 6. Save a NEW reflection

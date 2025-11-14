@@ -10,7 +10,7 @@ const HighlightMenu = forwardRef<HTMLDivElement, HighlightMenuProps>(
   ({ top, left, onSelectColor }, ref) => {
     return (
       <div
-        ref={ref} // Attach the ref here
+        ref={ref}
         className="highlight-menu"
         style={{ top: `${top}px`, left: `${left}px` }}
         onMouseDown={(e) => e.preventDefault()}

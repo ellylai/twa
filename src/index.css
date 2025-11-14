@@ -196,21 +196,21 @@ button:hover {
 }
 
 /* Match the button colors */
-.item-green { background-color: #f0fdf4; border-left: 4px solid #dbffdc; }
-.item-pink  { background-color: #fef1f8; border-left: 4px solid #ffdcee; }
-.item-blue  { background-color: #f0f9ff; border-left: 4px solid #ceeaff; }
+.item-green { background-color: #f0fdf4; border-left: 4px solid #a3e9a4; }
+.item-pink  { background-color: #fef1f8; border-left: 4px solid #f7b2d4; }
+.item-blue  { background-color: #f0f9ff; border-left: 4px solid #a5d8ff; }
 
 /* --- On-Page Highlights --- */
 
 mark.highlight-green {
-  background-color: #dbffdc;
+  background-color: #a3e9a4;
   color: inherit;
 }
 mark.highlight-pink {
-  background-color: #ffdcee;
+  background-color: #f7b2d4;
   color: inherit;
 }
 mark.highlight-blue {
-  background-color: #ceeaff;
+  background-color: #a5d8ff;
   color: inherit;
 }
