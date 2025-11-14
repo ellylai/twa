@@ -86,9 +86,13 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
     }
   }, [passageHtml, highlights]); 
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    // We moved the check for MARK from handleClick to here
+    if ((e.target as HTMLElement).tagName === 'MARK') return;
+
     const sel = window.getSelection();
     if (sel && !sel.isCollapsed && sel.toString().trim()) {
+      // --- Selection was made ---
       const range = sel.getRangeAt(0);
       savedRange.current = range;
       const rect = range.getBoundingClientRect();
@@ -96,6 +100,9 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
         top: window.scrollY + rect.top - 40,
         left: window.scrollX + rect.left + (rect.width / 2) - 60,
       });
+    } else {
+      setMenuState(null);
+      savedRange.current = null;
     }
   };
 

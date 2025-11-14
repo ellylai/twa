@@ -15,6 +15,7 @@ const HighlightMenu = forwardRef<HTMLDivElement, HighlightMenuProps>(
         style={{ top: `${top}px`, left: `${left}px` }}
         onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
       >
         <button className="btn-green" onClick={() => onSelectColor('green')}>
           Green
