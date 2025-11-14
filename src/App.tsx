@@ -108,7 +108,6 @@ function App() {
         <h2>{data.formattedDate}</h2>
       </header>
 
-      {/* --- NEW: Two-Column Layout --- */}
       <div className="app-layout">
         <div className="reading-column">
           <DailyReading 

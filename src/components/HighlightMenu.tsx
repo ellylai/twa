@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 type HighlightMenuProps = {
   top: number;
@@ -6,24 +6,28 @@ type HighlightMenuProps = {
   onSelectColor: (color: string) => void;
 };
 
-function HighlightMenu({ top, left, onSelectColor }: HighlightMenuProps) {
-  return (
-    <div
-      className="highlight-menu"
-      style={{ top: `${top}px`, left: `${left}px` }}
-      onMouseDown={(e) => e.preventDefault()}
-    >
-      <button className="btn-green" onClick={() => onSelectColor('green')}>
-        Green
-      </button>
-      <button className="btn-pink" onClick={() => onSelectColor('pink')}>
-        Pink
-      </button>
-      <button className="btn-blue" onClick={() => onSelectColor('blue')}>
-        Blue
-      </button>
-    </div>
-  );
-}
+const HighlightMenu = forwardRef<HTMLDivElement, HighlightMenuProps>(
+  ({ top, left, onSelectColor }, ref) => {
+    return (
+      <div
+        ref={ref} // Attach the ref here
+        className="highlight-menu"
+        style={{ top: `${top}px`, left: `${left}px` }}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="btn-green" onClick={() => onSelectColor('green')}>
+          Green
+        </button>
+        <button className="btn-pink" onClick={() => onSelectColor('pink')}>
+          Pink
+        </button>
+        <button className="btn-blue" onClick={() => onSelectColor('blue')}>
+          Blue
+        </button>
+      </div>
+    );
+  }
+);
 
 export default HighlightMenu;

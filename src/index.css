@@ -13,9 +13,9 @@ body {
 
 /* Main app container */
 main {
-  max-width: 800px;
-  margin: 40px 20px;
-  padding: 20px;
+  max-width: auto;
+  margin: 10px auto;
+  padding: 75px;
   text-align: left;
 }
 
