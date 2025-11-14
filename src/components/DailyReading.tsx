@@ -19,50 +19,103 @@ type MenuState = {
 
 // --- Utility Function to apply highlights on load ---
 function applyHighlights(container: HTMLElement, highlights: Highlight[]) {
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-  const textNodes: Node[] = [];
-  
-  while (walker.nextNode()) {
-    if (walker.currentNode.nodeValue?.trim() !== "") {
-      textNodes.push(walker.currentNode);
-    }
-  }
-  console.log("applyHighlights");
-  // Iterate over each text node *backwards*
-  for (const node of textNodes.reverse()) {
-    const text = node.nodeValue || '';
+  // We must process one highlight at a time, because each
+  // one modifies the DOM, invalidating node references for the next one.
+  for (const highlight of highlights) {
+    // 1. Get all text nodes, IN ORDER. We must do this fresh
+    //    for every highlight, as the previous one changed the DOM.
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    const allTextNodes: Node[] = [];
     
-    // Check this node against all highlights
-    for (const highlight of highlights) {
-      const textToFind = highlight.selected_text;
-      
-      const index = text.indexOf(textToFind); 
-      
-      if (index > -1) {
-        // --- Match Found ---
-        const parent = node.parentNode;
-        if (!parent) continue;
+    // Filter out nodes that are already inside a <mark>
+    while (walker.nextNode()) {
+      if (walker.currentNode.parentElement?.tagName !== 'MARK') {
+        allTextNodes.push(walker.currentNode);
+      }
+    }
 
-        // 1. Text before
-        const before = document.createTextNode(text.substring(0, index));
-        
-        // 2. The <mark> tag
+    // 2. Build the "virtual" string and index map
+    let virtualText = "";
+    const indexMap: { node: Node, offset: number }[] = [];
+    
+    for (const node of allTextNodes) {
+      const nodeText = node.nodeValue || "";
+      for (let i = 0; i < nodeText.length; i++) {
+        indexMap.push({ node: node, offset: i });
+      }
+      virtualText += nodeText;
+    }
+
+    // 3. Normalize both the "haystack" (virtual text) and the "needle" (saved text)
+    //    This is the key to finding a match.
+    const normalizedVirtualText = virtualText.replace(/[\s\n\u00A0]+/g, " ").trim();
+    const textToFind = highlight.selected_text.replace(/[\s\n\u00A0]+/g, " ").trim();
+
+    if (!textToFind) continue; // Don't process empty highlights
+
+    // 4. Find the highlight in the virtual text
+    const startIndex = normalizedVirtualText.indexOf(textToFind);
+    if (startIndex === -1) {
+      // console.warn(`Highlight ${highlight.id} NOT FOUND:`, JSON.stringify(textToFind));
+      continue; // This highlight isn't in the current text nodes, skip it
+    }
+    
+    const endIndex = startIndex + textToFind.length;
+
+    // 5. Get all the {node, offset} entries for this highlight
+    const affectedEntries = indexMap.slice(startIndex, endIndex);
+
+    // 6. Group the entries by node, so we know which *parts*
+    //    of each text node to wrap.
+    const nodesToWrap = new Map<Node, { start: number, end: number }>();
+    
+    for (const { node, offset } of affectedEntries) {
+      const existing = nodesToWrap.get(node);
+      if (!existing) {
+        nodesToWrap.set(node, { start: offset, end: offset });
+      } else {
+        existing.end = offset; // Just update the end offset
+      }
+    }
+
+    // 7. Iterate over the nodes we need to modify and wrap them.
+    //    We MUST go in reverse order so we don't invalidate
+    //    text nodes that are earlier in the document.
+    const nodes = Array.from(nodesToWrap.keys()).reverse();
+    
+    for (const node of nodes) {
+      const { start, end } = nodesToWrap.get(node)!;
+      
+      try {
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, end + 1); // +1 because setEnd is exclusive
+
         const mark = document.createElement('mark');
         mark.className = `highlight-${highlight.color_tag}`;
-        mark.textContent = textToFind;
-        mark.dataset.highlightId = String(highlight.id); 
+        mark.dataset.highlightId = String(highlight.id);
         
-        // 3. Text after
-        const after = document.createTextNode(text.substring(index + textToFind.length));
+        // This will now work, because the range is "clean"
+        // and only operates on a single text node.
+        range.surroundContents(mark);
 
-        // 4. Replace the old text node
-        parent.insertBefore(before, node);
-        parent.insertBefore(mark, node);
-        parent.insertBefore(after, node);
-        parent.removeChild(node);
+      } catch (e) {
+        console.error("Failed to wrap node for highlight:", highlight.id, e);
       }
     }
   }
+}
+
+function getTopLevelBlock(node: Node, container: HTMLElement) {
+  let parent = node.nodeType === 3 ? node.parentElement : (node as HTMLElement);
+  while (parent && parent !== container) {
+    // These are the tags that break up text nodes
+    if (['P', 'H3', 'H4'].includes(parent.tagName)) {
+      return parent;
+    }
+    parent = parent.parentElement;
+  }
+  return container; // Fallback to container
 }
 
 // --- Component ---
@@ -70,7 +123,6 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
   const [menuState, setMenuState] = useState<MenuState>(null);
   const savedRange = useRef<Range | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,25 +138,69 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
     }
   }, [passageHtml, highlights]); 
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    // We moved the check for MARK from handleClick to here
-    if ((e.target as HTMLElement).tagName === 'MARK') return;
+  useEffect(() => {
+    const handleDocumentMouseUp = (e: MouseEvent) => {
+      const container = containerRef.current;
 
-    const sel = window.getSelection();
-    if (sel && !sel.isCollapsed && sel.toString().trim()) {
-      // --- Selection was made ---
-      const range = sel.getRangeAt(0);
-      savedRange.current = range;
-      const rect = range.getBoundingClientRect();
-      setMenuState({
-        top: window.scrollY + rect.top - 40,
-        left: window.scrollX + rect.left + (rect.width / 2) - 60,
-      });
-    } else {
-      setMenuState(null);
-      savedRange.current = null;
-    }
-  };
+      // 1. Do nothing if click is on the menu
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) {
+        return;
+      }
+      
+      // 2. Do nothing if click is on an existing highlight (let handleClick handle it)
+      if ((e.target as HTMLElement).tagName === 'MARK') {
+        return;
+      }
+
+      if (!container) return;
+
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().trim()) {
+        
+        // 3. Check if selection is fully inside the container
+        if (!container.contains(sel.anchorNode) || !container.contains(sel.focusNode)) {
+          // Selection is outside, so hide menu
+          setMenuState(null);
+          savedRange.current = null;
+          return;
+        }
+
+        const range = sel.getRangeAt(0);
+        const startBlock = getTopLevelBlock(range.startContainer, container);
+        const endBlock = getTopLevelBlock(range.endContainer, container);
+
+        // // If the start/end blocks are different, it's an invalid highlight
+        if (startBlock !== endBlock) {
+          // Selection is invalid (spans paragraphs, headers, etc.)
+          // Hide menu and reset selection
+          setMenuState(null);
+          savedRange.current = null;
+          window.getSelection()?.removeAllRanges();
+          return; // Stop processing
+        }
+
+        // // --- 4. Valid selection: Show menu ---
+        savedRange.current = range;
+        const rect = range.getBoundingClientRect();
+        setMenuState({
+          top: window.scrollY + rect.top - 40,
+          left: window.scrollX + rect.left + (rect.width / 2) - 60,
+        });
+      } else {
+        // --- 5. No selection: Hide menu ---
+        setMenuState(null);
+        savedRange.current = null;
+      }
+    };
+
+    // Add listener to the document
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+  }, [containerRef, menuRef]);
 
   const handleSelectColor = (color: string) => {
     if (savedRange.current) {
@@ -135,6 +231,7 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
     <>
       {menuState && (
         <HighlightMenu
+          ref={menuRef}
           top={menuState.top}
           left={menuState.left}
           onSelectColor={handleSelectColor}
@@ -145,7 +242,6 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
         id="reading-text-container"
         className="passage-content"
         ref={containerRef}
-        onMouseUp={handleMouseUp}
         onClick={handleClick} 
       />
     </>

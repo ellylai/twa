@@ -60,6 +60,10 @@ function App() {
   const handleSaveHighlight = async (color: string, selectedText: string) => {
     if (!data) return; 
 
+    // --- DEBUG 1: Show what we are trying to save ---
+    console.log("--- handleSaveHighlight ---");
+    console.log("[DEBUG] Attempting to save highlight:", selectedText, "with color:", color);
+
     const { data: newHighlight, error } = await supabase
       .from('highlights')
       .insert({
@@ -71,10 +75,18 @@ function App() {
       .select()
       .single();
 
+    // --- DEBUG 2: Log the raw response from Supabase ---
+    console.log("[DEBUG] Supabase response:", { newHighlight, error });
+
     if (error) {
-      console.error("Error saving highlight:", error);
+      console.error("Highlight save error:", error);
     } else if (newHighlight) {
+      // --- DEBUG 3: This is what *should* happen ---
+      console.log("Successfully added new highlight to state.");
       setHighlights(currentHighlights => [...currentHighlights, newHighlight]);
+    } else {
+      // --- DEBUG 4: This is the *likely* problem ---
+      console.warn("Highlight saved, but newHighlight is null/undefined! setHighlights was NOT called.");
     }
   };
 
