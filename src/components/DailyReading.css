@@ -1,0 +1,30 @@
+/* src/components/DailyReading.css */
+
+.passage-content {
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  line-height: 1.7;
+}
+
+/* These are the styles from biblegateway.com */
+.passage-content h3, 
+.passage-content h4 {
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  margin-top: 2em;
+  margin-bottom: 1em;
+  font-size: 1.3em;
+  color: #333;
+}
+
+.passage-content p {
+  margin-bottom: 1em;
+}
+
+/* Style for verse numbers */
+.passage-content .versenum {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #555;
+  vertical-align: super;
+  padding-right: 2px;
+}

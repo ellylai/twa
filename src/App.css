@@ -40,3 +40,25 @@
 .read-the-docs {
   color: #888;
 }
+
+.reflection-item {
+  background-color: #f7f7f7;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+}
+
+.reflection-item p {
+  margin-top: 0;
+}
+
+.reflection-item small {
+  color: #777;
+}
+
+#new-reflection-box {
+  margin-top: 20px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
