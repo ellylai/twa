@@ -18,90 +18,140 @@ type MenuState = {
 } | null;
 
 // --- Utility Function to apply highlights on load ---
-function applyHighlights(container: HTMLElement, highlights: Highlight[]) {
-  // We must process one highlight at a time, because each
-  // one modifies the DOM, invalidating node references for the next one.
-  for (const highlight of highlights) {
-    // 1. Get all text nodes, IN ORDER. We must do this fresh
-    //    for every highlight, as the previous one changed the DOM.
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-    const allTextNodes: Node[] = [];
-    
-    // Filter out nodes that are already inside a <mark>
-    while (walker.nextNode()) {
-      if (walker.currentNode.parentElement?.tagName !== 'MARK') {
-        allTextNodes.push(walker.currentNode);
-      }
-    }
+// In src/components/DailyReading.tsx
 
-    // 2. Build the "virtual" string and index map
-    let virtualText = "";
-    const indexMap: { node: Node, offset: number }[] = [];
-    
-    for (const node of allTextNodes) {
+// --- REPLACEMENT for applyHighlights ---
+function applyHighlights(container: HTMLElement, highlights: Highlight[]) {
+  
+  // --- 1. Build maps using a recursive DOM traversal ---
+  // This correctly includes text from child spans (like verse numbers).
+  let virtualText = ""; // The original, "messy" text
+  const indexMap: { node: Node, offset: number }[] = []; // Maps messy index -> DOM node
+  
+  let normalizedVirtualText = ""; // The "clean" text
+  const normToOrigMap: number[] = []; // Maps clean index -> messy index
+
+  // This recursive function mimics how selection.toString() builds its string.
+  function buildMaps(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
       const nodeText = node.nodeValue || "";
       for (let i = 0; i < nodeText.length; i++) {
-        indexMap.push({ node: node, offset: i });
-      }
-      virtualText += nodeText;
-    }
-
-    // 3. Normalize both the "haystack" (virtual text) and the "needle" (saved text)
-    //    This is the key to finding a match.
-    const normalizedVirtualText = virtualText.replace(/[\s\n\u00A0]+/g, " ").trim();
-    const textToFind = highlight.selected_text.replace(/[\s\n\u00A0]+/g, " ").trim();
-
-    if (!textToFind) continue; // Don't process empty highlights
-
-    // 4. Find the highlight in the virtual text
-    const startIndex = normalizedVirtualText.indexOf(textToFind);
-    if (startIndex === -1) {
-      // console.warn(`Highlight ${highlight.id} NOT FOUND:`, JSON.stringify(textToFind));
-      continue; // This highlight isn't in the current text nodes, skip it
-    }
-    
-    const endIndex = startIndex + textToFind.length;
-
-    // 5. Get all the {node, offset} entries for this highlight
-    const affectedEntries = indexMap.slice(startIndex, endIndex);
-
-    // 6. Group the entries by node, so we know which *parts*
-    //    of each text node to wrap.
-    const nodesToWrap = new Map<Node, { start: number, end: number }>();
-    
-    for (const { node, offset } of affectedEntries) {
-      const existing = nodesToWrap.get(node);
-      if (!existing) {
-        nodesToWrap.set(node, { start: offset, end: offset });
-      } else {
-        existing.end = offset; // Just update the end offset
-      }
-    }
-
-    // 7. Iterate over the nodes we need to modify and wrap them.
-    //    We MUST go in reverse order so we don't invalidate
-    //    text nodes that are earlier in the document.
-    const nodes = Array.from(nodesToWrap.keys()).reverse();
-    
-    for (const node of nodes) {
-      const { start, end } = nodesToWrap.get(node)!;
-      
-      try {
-        const range = document.createRange();
-        range.setStart(node, start);
-        range.setEnd(node, end + 1); // +1 because setEnd is exclusive
-
-        const mark = document.createElement('mark');
-        mark.className = `highlight-${highlight.color_tag}`;
-        mark.dataset.highlightId = String(highlight.id);
+        const char = nodeText[i];
+        const origIndex = virtualText.length; // Current end of the virtual string
         
-        // This will now work, because the range is "clean"
-        // and only operates on a single text node.
-        range.surroundContents(mark);
+        indexMap.push({ node: node, offset: i });
+        virtualText += char; // Add to messy string
 
-      } catch (e) {
-        console.error("Failed to wrap node for highlight:", highlight.id, e);
+        // --- Normalization logic ---
+        const isWhitespace = /[\s\n\u00A0]/.test(char);
+        if (isWhitespace) {
+          if (normalizedVirtualText.length > 0 && normalizedVirtualText[normalizedVirtualText.length - 1] !== ' ') {
+            normalizedVirtualText += ' ';
+            normToOrigMap.push(origIndex);
+          }
+        } else {
+          normalizedVirtualText += char;
+          normToOrigMap.push(origIndex);
+        }
       }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // If it's an element, process its children
+      const el = node as HTMLElement;
+      
+      // Filter out nodes we don't want to traverse
+      if (el.tagName === 'MARK' || el.tagName === 'SCRIPT' || el.tagName === 'STYLE') {
+        return;
+      }
+
+      for (let i = 0; i < node.childNodes.length; i++) {
+        buildMaps(node.childNodes[i]);
+      }
+
+      // Add a space for block-level elements, just like selection.toString() does
+      if (['P', 'H3', 'H4', 'DIV'].includes(el.tagName)) {
+         if (normalizedVirtualText.length > 0 && normalizedVirtualText[normalizedVirtualText.length - 1] !== ' ') {
+            normalizedVirtualText += ' ';
+            normToOrigMap.push(virtualText.length); // Map to the *end* of the messy string
+         }
+      }
+    }
+  }
+
+  // Start the traversal from the main container
+  buildMaps(container);
+  
+  // This is our final, clean "haystack"
+  const haystack = normalizedVirtualText.trim();
+  // Find the trim offset
+  const trimOffsetStart = normalizedVirtualText.indexOf(haystack);
+
+  // --- 3. Find all ranges first ---
+  const allRangesToWrap: { range: Range, highlight: Highlight }[] = [];
+
+  for (const highlight of highlights) {
+    // This is our clean "needle"
+    const textToFind = highlight.selected_text.replace(/[\s\n\u00A0]+/g, " ").trim();
+    if (!textToFind) continue;
+
+    const normStartIndex = haystack.indexOf(textToFind);
+    
+    if (normStartIndex > -1) {
+      const normEndIndex = normStartIndex + textToFind.length;
+
+      // --- 4. Convert clean indexes back to original, messy indexes ---
+      const origStartIndex = normToOrigMap[normStartIndex + trimOffsetStart]; 
+      const origEndIndexInMap = normToOrigMap[normEndIndex - 1 + trimOffsetStart];
+
+      if (origStartIndex === undefined || origEndIndexInMap === undefined) {
+         console.error("Highlight mapping failed for:", textToFind);
+         continue;
+      }
+
+      // Get all the DOM entries from the *original* map
+      const affectedEntries = indexMap.slice(origStartIndex, origEndIndexInMap + 1);
+      if (affectedEntries.length === 0) continue;
+
+      // --- 5. Group by node (Same as before) ---
+      const nodesToWrap = new Map<Node, { start: number, end: number }>();
+      
+      for (const { node, offset } of affectedEntries) {
+        if (node.nodeType !== Node.TEXT_NODE || node.parentElement?.tagName === 'MARK') {
+            continue; 
+        }
+        const existing = nodesToWrap.get(node);
+        if (!existing) {
+          nodesToWrap.set(node, { start: offset, end: offset });
+        } else {
+          existing.end = offset;
+        }
+      }
+      
+      // --- 6. Create sub-ranges (Same as before) ---
+      for (const [node, { start, end }] of nodesToWrap.entries()) {
+          try {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, end + 1);
+            allRangesToWrap.push({ range, highlight });
+          } catch (e) {
+            console.error("Failed to create sub-range", e);
+          }
+      }
+    }
+  }
+
+  // --- 7. Apply all ranges, backwards (Same as before) ---
+  for (const item of allRangesToWrap.reverse()) {
+    if (item.range.startContainer.parentElement?.tagName === 'MARK') {
+      continue; 
+    }
+    try {
+      const mark = document.createElement('mark');
+      mark.className = `highlight-${item.highlight.color_tag}`;
+      mark.dataset.highlightId = String(item.highlight.id);
+      item.range.surroundContents(mark);
+    } catch (e) {
+      console.error("Failed to wrap final range for highlight:", item.highlight.id, e);
     }
   }
 }
@@ -203,14 +253,19 @@ function DailyReading({ passageHtml, highlights, onSaveHighlight, onDeleteHighli
   }, [containerRef, menuRef]);
 
   const handleSelectColor = (color: string) => {
-    if (savedRange.current) {
-      const textToSave = savedRange.current.toString().trim();
-      onSaveHighlight(color, textToSave);
-    }
+    window.getSelection()?.removeAllRanges();
 
+    if (savedRange.current) {
+      const textToSave = savedRange.current.toString()
+        .replace(/[\s\n\u00A0]+/g, " ")
+        .trim();
+      
+      if (textToSave) {
+        onSaveHighlight(color, textToSave);
+      }
+    }
     setMenuState(null);
     savedRange.current = null;
-    window.getSelection()?.removeAllRanges();
   };
 
   const handleClick = (e: React.MouseEvent) => {

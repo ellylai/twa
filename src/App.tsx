@@ -60,6 +60,9 @@ function App() {
   const handleSaveHighlight = async (color: string, selectedText: string) => {
     if (!data) return; 
 
+    const trimmedText = selectedText.trim();
+    if (!trimmedText) return;
+
     // --- DEBUG 1: Show what we are trying to save ---
     console.log("--- handleSaveHighlight ---");
     console.log("[DEBUG] Attempting to save highlight:", selectedText, "with color:", color);
@@ -106,7 +109,7 @@ function App() {
   };
 
   if (loading) {
-    return <main><p>Loading daily reading...</p></main>;
+    return <main><p>Loading today's TWA...</p></main>;
   }
   
   if (error || !data) {
@@ -116,7 +119,7 @@ function App() {
   return (
     <main>
       <header>
-        <h1>Daily Reading</h1>
+        <h1>Today's Time with Abba</h1>
         <h2>{data.formattedDate}</h2>
       </header>
 

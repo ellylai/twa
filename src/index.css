@@ -1,3 +1,12 @@
+/* COLOR CONSTANTS */
+:root {
+  --pink-highlight: #f9e5f0;
+  --green-highlight: #ddefdd;
+  --blue-highlight: #ddeffc;
+  --very-light-gray: #f9f9f9;
+}
+
+
 /* Reset browser defaults */
 body, h1, h2, h3, p, div {
   margin: 0;
@@ -24,15 +33,15 @@ h1 {
   font-family: 'Georgia', 'Times New Roman', Times, serif;
   font-weight: bold;
   font-size: 2.5em;
-  margin-bottom: 30px;
+  /* margin-bottom: 20px; */
 }
 
 h2 {
   font-family: 'Georgia', 'Times New Roman', Times, serif;
   font-weight: bold;
   font-size: 2em;
-  margin-top: 40px;
-  /* margin-bottom: 20px; */
+  /* margin-top: 10px; */
+  margin-bottom: 20px;
   padding-bottom: 10px;
 }
 
@@ -79,7 +88,7 @@ button:hover {
 
 /* Simple reflection list */
 .reflection-item {
-  background-color: #f9f9f9; /* Very light gray */
+  background-color: var(--very-light-gray);
   padding: 15px;
   margin-bottom: 10px;
   border-radius: 4px;
@@ -148,13 +157,13 @@ button:hover {
 /* --- 2. Highlight Pop-up Menu --- */
 .highlight-menu {
   position: absolute;
-  background-color: #333;
+  background-color: #cbcbcb;
   color: white;
   border-radius: 6px;
   padding: 5px;
   display: flex;
   gap: 5px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(189, 185, 185, 0.498);
   z-index: 100;
 }
 
@@ -167,11 +176,10 @@ button:hover {
 }
 
 /* The highlight colors */
-.btn-green { background-color: #a3e9a4; color: #216c23; }
-.btn-pink  { background-color: #f7b2d4; color: #8c1c4f; }
-.btn-blue  { background-color: #a5d8ff; color: #004a99; }
+.btn-green { background-color: var(--green-highlight); color: #216c23; }
+.btn-pink  { background-color: var(--pink-highlight); color: #8c1c4f; }
+.btn-blue  { background-color: var(--blue-highlight); color: #004a99; }
 
-/* --- 3. Highlight List in Panel --- */
 .highlight-list {
   margin-top: 30px;
 }
@@ -196,21 +204,21 @@ button:hover {
 }
 
 /* Match the button colors */
-.item-green { background-color: #f0fdf4; border-left: 4px solid #a3e9a4; }
-.item-pink  { background-color: #fef1f8; border-left: 4px solid #f7b2d4; }
-.item-blue  { background-color: #f0f9ff; border-left: 4px solid #a5d8ff; }
+.item-green { background-color: var(--green-highlight); border-left: 4px solid #a3e9a4; }
+.item-pink  { background-color: var(--pink-highlight); border-left: 4px solid #f7b2d4; }
+.item-blue  { background-color: var(--blue-highlight); border-left: 4px solid #a5d8ff; }
 
 /* --- On-Page Highlights --- */
 
 mark.highlight-green {
-  background-color: #a3e9a4;
+  background-color: var(--green-highlight);
   color: inherit;
 }
 mark.highlight-pink {
-  background-color: #f7b2d4;
+  background-color: var(--pink-highlight);
   color: inherit;
 }
 mark.highlight-blue {
-  background-color: #a5d8ff;
+  background-color: var(--blue-highlight);
   color: inherit;
 }

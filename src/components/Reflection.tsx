@@ -87,7 +87,7 @@ function Reflection({ readingId }: ReflectionProps) {
 
   return (
     <div id="reflection-container">
-      <h3>Overall Reflections</h3>
+      <h3>Reflections</h3>
       
       {/* 9. Display the list of saved reflections */}
       <div id="reflections-list">
@@ -103,7 +103,7 @@ function Reflection({ readingId }: ReflectionProps) {
 
       {/* 10. Show the box for adding a NEW reflection */}
       <div id="new-reflection-box">
-        <h4>Add a new reflection</h4>
+        {/* <h4>Add a new reflection</h4> */}
         <textarea
           id="reflection-text"
           placeholder="Write a new reflection..."
@@ -111,7 +111,7 @@ function Reflection({ readingId }: ReflectionProps) {
           onChange={handleTextChange}
         />
         <button onClick={handleSave}>Save New Reflection</button>
-        <span style={{ marginLeft: '10px' }}>{status}</span>
+        <span style={{ marginLeft: '10px' }}></span>
       </div>
     </div>
   );
