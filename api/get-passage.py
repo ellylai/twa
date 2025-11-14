@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime
 import re
+from playwright.sync_api import sync_playwright
 
 load_dotenv(dotenv_path=".env.local")
 
@@ -28,81 +29,17 @@ def scrape_and_parse_passage():
     Returns:
         tuple: (day_key, formatted_date, passage_html)
     """
-
-    # --- Part A: Scrape SJCAC ---
+    # server time
     try:
-        sjcac_url = "https://www.sjcac.org/twa/"
-        sjcac_response = requests.get(sjcac_url, timeout=10)
-        sjcac_soup = BeautifulSoup(sjcac_response.text, "html.parser")
-
-        script_tag = sjcac_soup.find("script", id="wix-warmup-data")
-        if not script_tag or not script_tag.string:
-            raise Exception("Could not find wix-warmup-data script tag")
-
-        json_data = json.loads(script_tag.string)
-        props = json_data.get("platform", {}).get("ssrPropsUpdates", [{}])[0]
-
-        # --- Find date, passages, and URL in ONE loop ---
-        sjcac_date_str = None
-        passage_references_html = None  # This is the variable that was missing
-        bible_gateway_url = None
-
-        for key, value in props.items():
-            if not isinstance(value, dict):
-                continue
-
-            # A. Find the Date
-            if "html" in value and "wixui-rich-text__text" in value["html"]:
-                match = re.search(
-                    r'<span class="wixui-rich-text__text">(.*?)<\/span>', value["html"]
-                )
-                if match:
-                    date_candidate = match.group(1)
-                    if (
-                        "Mon," in date_candidate
-                        or "Tue," in date_candidate
-                        or "Wed," in date_candidate
-                        or "Thu," in date_candidate
-                        or "Fri," in date_candidate
-                        or "Sat," in date_candidate
-                        or "Sun," in date_candidate
-                    ):
-                        sjcac_date_str = date_candidate  # e.g., "Wed, Nov 12"
-
-            # B. Find the Passage List (from your old JSON)
-            if "html" in value and "<br>" in value["html"]:
-                passage_soup = BeautifulSoup(value["html"], "html.parser")
-                span = passage_soup.find("span", class_="wixui-rich-text__text")
-                if span:
-                    passage_references_html = str(span.decode_contents())
-
-            # C. Find the Bible Gateway URL
-            if "link" in value and "href" in value.get("link", {}):
-                href = value["link"]["href"]
-                if "biblegateway.com" in href and "version=NIV" in href:
-                    bible_gateway_url = href.replace(r"\/", "/")
-
-        if not sjcac_date_str or not bible_gateway_url or not passage_references_html:
-            raise Exception(
-                f"Missing SJCAC data: Date({sjcac_date_str}), URL({bible_gateway_url}), Passages({passage_references_html})"
-            )
-
-        # --- Convert date to our dayKey (using the "no year" logic) ---
-        date_part = sjcac_date_str.split(", ")[1]
-        if "," in date_part:
-            date_part = date_part.split(",")[0]  # "Nov 12"
-
-        dummy_year_str = " 2000"
-        date_obj = datetime.strptime(date_part + dummy_year_str, "%b %d %Y")
-
-        day_key = date_obj.strftime("%m-%d")
-        formatted_date = date_obj.strftime("%B %d")  # "November 12"
-
+        today = datetime.now()
+        day_key = today.strftime("%m-%d")
+        formatted_date = today.strftime("%B %d")
+        print(f"--- [DEBUG]: Using server-generated day_key: {day_key} ---")
     except Exception as e:
-        print(f"SJCAC scrape error: {e}")
+        print(f"Error getting server date: {e}")
+        server_day_key = day_key
         raise
 
-    # --- Part B: Check Cache (using our NEW day_key) ---
     try:
         response = (
             supabase.from_("daily_passages")
@@ -112,9 +49,62 @@ def scrape_and_parse_passage():
             .execute()
         )
         if response.data:
+            print(f"--- DEBUG: Found cached data for {day_key} ---")
             return day_key, formatted_date, response.data["content"]
     except Exception as e:
-        pass  # Not found in cache
+        print(f"--- DEBUG: No cache for {day_key}. Proceeding to scrape. ---")
+        pass
+
+    # --- Part A: Scrape SJCAC ---
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+
+            page.goto("https://www.sjcac.org/twa/", wait_until="networkidle")
+
+            html = page.content()
+            # with open("dump.html", "w", encoding="utf-8") as f:
+            #     f.write(html)
+            browser.close()
+
+        sjcac_soup = BeautifulSoup(html, "html.parser")
+
+        date_tag = sjcac_soup.find("div", {"id": "comp-ltdcf3gt2"})
+        if not date_tag:
+            raise Exception("Could not find date component (comp-ltdcf3gt2)")
+
+        sjcac_date_str = date_tag.get_text(strip=True)
+
+        link_tag_container = sjcac_soup.find("div", {"id": "comp-mhl12muh2"})
+        if not link_tag_container:
+            raise Exception("Could not find link component (comp-mhl12muh2)")
+
+        link_tag = link_tag_container.find("a")
+        if not link_tag or not link_tag.has_attr("href"):
+            raise Exception("Could not find <a> tag with href in link component")
+
+        bible_gateway_url = link_tag["href"]
+        if "biblegateway.com" not in bible_gateway_url:
+            raise Exception("Found link is not for Bible Gateway")
+
+        print(f"--- DEBUG: Found Date: {sjcac_date_str} ---")
+        print(f"--- DEBUG: Found URL: {bible_gateway_url} ---")
+
+        # --- 3. Convert date to our dayKey (using the "no year" logic) ---
+        date_part = sjcac_date_str.split(", ")[1]
+
+        dummy_year_str = " 2000"
+        date_obj = datetime.strptime(date_part + dummy_year_str, "%b %d %Y")
+
+        day_key = date_obj.strftime("%m-%d")
+        formatted_date = date_obj.strftime("%B %d")
+        if day_key != server_day_key:
+            raise Exception(f"Server Day {server_day_key} != Scraped Day {day_key}")
+
+    except Exception as e:
+        print(f"SJCAC scrape error: {e}")
+        raise
 
     # --- Part C: Scrape Bible Gateway (if not in cache) ---
     try:
@@ -160,11 +150,11 @@ def scrape_and_parse_passage():
 
         # --- Part D: Save to Supabase (using correct key) ---
         try:
+            print(f"--- DEBUG: Saving new content to cache for {day_key} ---")
             supabase.from_("daily_passages").insert(
                 {
                     "day_key": day_key,
                     "content": passage_html,
-                    # Use the clean string from the meta tag
                     "passage_references": content_string,
                     "created_at": datetime.now().isoformat(),
                 }
