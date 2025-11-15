@@ -8,15 +8,15 @@
   --deep-maroon: #671414;
 }
 
-
 /* Reset browser defaults */
-body, h1, h2, h3, p, div {
+body, h1, h2, h3, h4, p, div {
   margin: 0;
   padding: 0;
 }
 
 body {
   font-family: 'Georgia', 'Times New Roman', Times, serif;
+  font-size: 1.2em;
   line-height: 1.6;
   background-color: #ffffff; /* White background */
   color: #1a1a1a; /* Dark text */
@@ -41,13 +41,19 @@ h1 {
 h2 {
   font-family: 'Georgia', 'Times New Roman', Times, serif;
   font-weight: bold;
-  font-size: 2em;
+  font-size: 1.5em;
   /* margin-top: 10px; */
   margin-bottom: 20px;
   padding-bottom: 10px;
 }
 
 h3 {
+  font-size: 1.8em;
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  margin-bottom: 15px;
+}
+
+h4 {
   font-size: 1.5em;
   font-family: 'Georgia', 'Times New Roman', Times, serif;
   margin-bottom: 15px;

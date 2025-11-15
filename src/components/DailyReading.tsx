@@ -160,7 +160,7 @@ function getTopLevelBlock(node: Node, container: HTMLElement) {
   let parent = node.nodeType === 3 ? node.parentElement : (node as HTMLElement);
   while (parent && parent !== container) {
     // These are the tags that break up text nodes
-    if (['P', 'H3', 'H4'].includes(parent.tagName)) {
+    if (['H3', 'H4'].includes(parent.tagName)) {
       return parent;
     }
     parent = parent.parentElement;

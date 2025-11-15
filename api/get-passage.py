@@ -37,7 +37,6 @@ def scrape_and_parse_passage():
         print(f"--- [DEBUG]: Using server-generated day_key: {day_key} ---")
     except Exception as e:
         print(f"Error getting server date: {e}")
-        server_day_key = day_key
         raise
 
     try:
@@ -53,6 +52,7 @@ def scrape_and_parse_passage():
             return day_key, formatted_date, response.data["content"]
     except Exception as e:
         print(f"--- DEBUG: No cache for {day_key}. Proceeding to scrape. ---")
+        server_day_key = day_key
         pass
 
     # --- Part A: Scrape SJCAC ---
@@ -135,11 +135,13 @@ def scrape_and_parse_passage():
                 final_html_parts.append(str(new_header))
 
             for h3_tag in container.find_all("h3"):
-                h3_tag.name = "h4"
+                if h3_tag.string in passage_headers[i]:
+                    h3_tag.decompose()
             for sup in container.find_all("sup", class_=["crossreference", "footnote"]):
                 sup.decompose()
             for h4 in container.find_all("h4"):
-                h4.decompose()
+                print(h4)
+
             for a_tag in container.find_all("a", class_="full-chap-link"):
                 a_tag.decompose()
             for div in container.find_all("div", class_="passage-other-trans"):
