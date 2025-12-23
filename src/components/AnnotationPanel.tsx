@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Added useState
+import { useState } from 'react'; // Added useState
 import Reflection from './Reflection';
 import HighlightList from './HighlightList';
 import CalendarPanel from './CalendarPanel'; // Added import

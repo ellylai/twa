@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Highlight } from '../App'; // Import the type from App.tsx
 
 // --- Types ---

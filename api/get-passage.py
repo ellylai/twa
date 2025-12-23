@@ -2,13 +2,11 @@
 
 import os
 import requests
-import json
-from flask import Flask, request, jsonify, Response
+from flask import Flask, jsonify
 from supabase import create_client, Client
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime
-import re
 from playwright.sync_api import sync_playwright
 
 load_dotenv(dotenv_path=".env.local")

@@ -153,10 +153,6 @@ button:hover {
   gap: 40px;
 }
 
-.reading-column {
-  /* No styles needed, it just holds the reading */
-}
-
 .panel-column {
   border-left: 1px solid #eee;
   padding-left: 30px;

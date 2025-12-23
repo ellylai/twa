@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import DailyReading from './components/DailyReading'
 import AnnotationPanel from './components/AnnotationPanel'
