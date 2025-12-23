@@ -36,6 +36,30 @@ function App() {
     if (highlightsData) setHighlights(highlightsData);
   };
 
+  const loadDay = async (dayKey: string) => {
+    setLoading(true);
+    try {
+      const { data: passage } = await supabase
+        .from('daily_passages')
+        .select('*')
+        .eq('day_key', dayKey)
+        .single();
+
+      if (passage) {
+        setData({
+          dayKey: passage.day_key,
+          formattedDate: new Date(2025, parseInt(dayKey.split('-')[0]) - 1, parseInt(dayKey.split('-')[1]))
+            .toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
+          passageHtml: passage.content
+        });
+        await fetchData(dayKey); 
+      }
+    } catch (err) {
+      console.error("Error loading day:", err);
+    }
+    setLoading(false);
+  };  
+
   useEffect(() => {
     async function fetchPassage() {
       try {
@@ -137,6 +161,7 @@ function App() {
           <AnnotationPanel 
             readingId={data.dayKey} 
             highlights={highlights}
+            onSelectDate={loadDay} // Pass the new loader
           />
         </div>
       </div>

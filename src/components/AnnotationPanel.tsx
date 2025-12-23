@@ -1,20 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react'; // Added useState
 import Reflection from './Reflection';
 import HighlightList from './HighlightList';
-import type { Highlight } from '../App'; // Import the type from App.tsx
+import CalendarPanel from './CalendarPanel'; // Added import
+import type { Highlight } from '../App';
 
 type AnnotationPanelProps = {
   readingId: string;
-  highlights: Highlight[]; // Accepts highlights as a prop
+  highlights: Highlight[];
+  onSelectDate: (dayKey: string) => void; // Added prop
 };
 
-function AnnotationPanel({ readingId, highlights }: AnnotationPanelProps) {
+function AnnotationPanel({ readingId, highlights, onSelectDate }: AnnotationPanelProps) {
+  const [view, setView] = useState<'annotations' | 'calendar'>('annotations');
+
   return (
     <div>
-      <Reflection readingId={readingId} />
+      <div className="panel-tabs">
+        <button 
+          className={view === 'annotations' ? 'active-tab' : ''} 
+          onClick={() => setView('annotations')}
+        >
+          Reflections
+        </button>
+        <button 
+          className={view === 'calendar' ? 'active-tab' : ''} 
+          onClick={() => setView('calendar')}
+        >
+          Calendar
+        </button>
+      </div>
 
-      {/* Pass the highlights prop down */}
-      <HighlightList highlights={highlights} />
+      {view === 'annotations' ? (
+        <>
+          <Reflection readingId={readingId} />
+          <HighlightList highlights={highlights} />
+        </>
+      ) : (
+        <CalendarPanel 
+          currentDayKey={readingId} 
+          onSelectDate={(date) => {
+            onSelectDate(date);
+            setView('annotations'); 
+          }} 
+        />
+      )}
     </div>
   );
 }

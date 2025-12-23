@@ -230,3 +230,125 @@ mark.highlight-blue {
   background-color: var(--blue-highlight);
   color: inherit;
 }
+
+/* Sidebar Tabs */
+.panel-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.panel-tabs button {
+  background: none;
+  color: #666;
+  border: 1px solid #ddd;
+  flex: 1;
+}
+
+.panel-tabs button.active-tab {
+  background-color: var(--maroon);
+  color: white;
+  border-color: var(--maroon);
+}
+
+/* Calendar format styles */
+.calendar-container {
+  padding: 10px;
+}
+
+.calendar-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.weekday {
+  font-weight: bold;
+  font-size: 0.8em;
+  color: #888;
+  padding-bottom: 5px;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-nav button {
+  background: none;
+  color: var(--maroon);
+  border: 1px solid #eee;
+  padding: 5px 10px;
+  font-size: 1rem;
+}
+
+.calendar-nav h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--deep-maroon);
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.panel-tabs button {
+  flex: 1;
+  background: none;
+  color: var(--maroon);
+  border: 1px solid var(--maroon);
+}
+
+.panel-tabs button.active-tab {
+  background-color: var(--maroon);
+  color: white;
+}
+
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-title {
+  text-align: center;
+}
+
+.btn-today {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  margin-top: 4px;
+  background: none;
+  color: var(--maroon);
+  border: 1px solid var(--maroon);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.calendar-day.available {
+  color: var(--maroon);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.calendar-day.active {
+  background-color: var(--maroon) !important;
+  color: white !important;
+}

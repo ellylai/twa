@@ -19,12 +19,11 @@ function HighlightList({ highlights }: HighlightListProps) {
       <h3>Highlights</h3>
       
       {highlights.length === 0 && <p>No highlights yet.</p>}
-
-      {grouped.green.length > 0 && (
+      {grouped.blue.length > 0 && (
         <div className="highlight-group">
-          <h4>His Promises</h4>
-          {grouped.green.map(h => (
-            <div key={h.id} className="highlight-item item-green">
+          {/* <h4>His Character</h4> */}
+          {grouped.blue.map(h => (
+            <div key={h.id} className="highlight-item item-blue">
               <p>{h.selected_text}</p>
             </div>
           ))}
@@ -33,7 +32,7 @@ function HighlightList({ highlights }: HighlightListProps) {
       
       {grouped.pink.length > 0 && (
         <div className="highlight-group">
-          <h4>Our Sin</h4>
+          {/* <h4>Our Sin</h4> */}
           {grouped.pink.map(h => (
             <div key={h.id} className="highlight-item item-pink">
               <p>{h.selected_text}</p>
@@ -41,17 +40,18 @@ function HighlightList({ highlights }: HighlightListProps) {
           ))}
         </div>
       )}
-      
-      {grouped.blue.length > 0 && (
+
+      {grouped.green.length > 0 && (
         <div className="highlight-group">
-          <h4>His Character</h4>
-          {grouped.blue.map(h => (
-            <div key={h.id} className="highlight-item item-blue">
+          {/* <h4>His Promises</h4> */}
+          {grouped.green.map(h => (
+            <div key={h.id} className="highlight-item item-green">
               <p>{h.selected_text}</p>
             </div>
           ))}
         </div>
       )}
+      
     </div>
   );
 }

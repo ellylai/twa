@@ -135,7 +135,7 @@ def scrape_and_parse_passage():
                 final_html_parts.append(str(new_header))
 
             for h3_tag in container.find_all("h3"):
-                if h3_tag.string in passage_headers[i]:
+                if h3_tag.string and h3_tag.string in passage_headers[i]:
                     h3_tag.decompose()
             for sup in container.find_all("sup", class_=["crossreference", "footnote"]):
                 sup.decompose()
