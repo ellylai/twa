@@ -1,27 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "api/get-passage.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/vite",
-      "config": {
-        "installCommand": "npm install"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/get-passage.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "index.html"
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
